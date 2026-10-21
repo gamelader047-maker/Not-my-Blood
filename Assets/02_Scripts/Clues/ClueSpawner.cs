@@ -194,6 +194,7 @@ namespace NotMyBlood.Clues
 
             GameObject obj = Instantiate(prefab, spot.transform.position, spot.transform.rotation, transform);
             obj.name = $"{prefab.name}_S{spot.SpotId:00}{(isFake ? "_FAKE" : "")}";
+            obj.transform.localScale = prefab.transform.localScale * spot.VisualScale;
             if (obj.TryGetComponent(out ClueObject clue))
             {
                 clue.Setup(category, values.blood, values.shoe, values.color, spot.RoomName, isFake);

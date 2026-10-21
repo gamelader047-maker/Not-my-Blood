@@ -13,10 +13,13 @@ namespace NotMyBlood.Clues
         [SerializeField] private bool allowBlood;
         [SerializeField] private bool allowShoe;
         [SerializeField] private bool allowFiber;
+        [Tooltip("Grösse der Spur an diesem Punkt (z. B. kleiner auf einem Nachttisch, damit nichts über die Kante hängt).")]
+        [SerializeField] private float visualScale = 1f;
 
         public int SpotId => spotId;
         public string RoomName => roomName;
         public string LocationName => roomName;
+        public float VisualScale => visualScale > 0f ? visualScale : 1f;
 
         /// <summary>
         /// Prüft, ob die angegebene Spurkategorie an diesem Punkt erlaubt ist.
@@ -40,13 +43,14 @@ namespace NotMyBlood.Clues
         /// <summary>
         /// Richtet den Spurenpunkt im Editor ein.
         /// </summary>
-        public void EditorSetup(int id, string room, bool blood, bool shoe, bool fiber)
+        public void EditorSetup(int id, string room, bool blood, bool shoe, bool fiber, float scale = 1f)
         {
             spotId = id;
             roomName = room;
             allowBlood = blood;
             allowShoe = shoe;
             allowFiber = fiber;
+            visualScale = scale;
             UnityEditor.EditorUtility.SetDirty(this);
         }
 

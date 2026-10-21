@@ -65,26 +65,61 @@ namespace NotMyBlood.Clues
             ApplyVisual();
         }
 
-        /// <summary>Fasern sollen im Spiel die Farbe haben, die im Notizbuch steht.</summary>
+        /// <summary>
+        /// Passt das Modell an den Wert an (Prefabs aus "Spuren-Prefabs erstellen"):
+        /// - Blut: Lache am Boden/auf Möbeln, Spritzer an der Wand
+        /// - Schuh: das passende Sohlenprofil (Kreise, Zickzack, Glatt)
+        /// - Faser: Farbe wie im Notizbuch
+        /// Dazu eine zufällige Drehung, damit gleiche Spuren nicht identisch aussehen.
+        /// </summary>
         private void ApplyVisual()
         {
-            if (category != ClueCategory.Faser) return;
-
-            Color color = clothingColor switch
+            Transform visual = transform.Find("Visual");
+            if (visual != null && visual.childCount > 0)
             {
-                ClothingColor.Rot => new Color(0.66f, 0.20f, 0.16f),
-                ClothingColor.Schwarz => new Color(0.15f, 0.13f, 0.16f),
-                _ => new Color(0.58f, 0.58f, 0.60f),
-            };
-
-            var block = new MaterialPropertyBlock();
-            foreach (var r in GetComponentsInChildren<Renderer>())
-            {
-                r.GetPropertyBlock(block);
-                block.SetColor("_BaseColor", color);
-                block.SetColor("_Color", color);
-                r.SetPropertyBlock(block);
+                visual.localRotation = Quaternion.Euler(0f, Random.Range(0f, 360f), 0f);
             }
+
+            switch (category)
+            {
+                case ClueCategory.Blut:
+                    // Spurenpunkte an Wänden sind so gedreht, dass ihre Oberseite von der Wand weg zeigt
+                    bool onWall = Vector3.Dot(transform.up, Vector3.up) < 0.5f;
+                    SetVariant(visual, "Blut_Boden", !onWall);
+                    SetVariant(visual, "Blut_Wand", onWall);
+                    break;
+
+                case ClueCategory.Schuh:
+                    SetVariant(visual, "Profil_Kreise", shoeProfile == ShoeProfile.Kreise);
+                    SetVariant(visual, "Profil_Zickzack", shoeProfile == ShoeProfile.Zickzack);
+                    SetVariant(visual, "Profil_Glatt", shoeProfile == ShoeProfile.Glatt);
+                    break;
+
+                case ClueCategory.Faser:
+                    Color color = clothingColor switch
+                    {
+                        ClothingColor.Rot => new Color(0.66f, 0.20f, 0.16f),
+                        ClothingColor.Schwarz => new Color(0.15f, 0.13f, 0.16f),
+                        _ => new Color(0.58f, 0.58f, 0.60f),
+                    };
+
+                    var block = new MaterialPropertyBlock();
+                    foreach (var r in GetComponentsInChildren<Renderer>(true))
+                    {
+                        r.GetPropertyBlock(block);
+                        block.SetColor("_BaseColor", color);
+                        block.SetColor("_Color", color);
+                        r.SetPropertyBlock(block);
+                    }
+                    break;
+            }
+        }
+
+        private static void SetVariant(Transform visual, string childName, bool active)
+        {
+            if (visual == null) return;
+            Transform child = visual.Find(childName);
+            if (child != null) child.gameObject.SetActive(active);
         }
 
         public void SetFakeStatus(bool fakeStatus)
