@@ -31,10 +31,10 @@ namespace NotMyBlood.EditorTools
 
         private static void CreateAndPlaceDummies()
         {
-            MapMarker[] markers = FindObjectsByType<MapMarker>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+            MapMarker[] markers = FindObjectsByType<MapMarker>(FindObjectsInactive.Exclude);
 
             // Eigener Player bekommt auch eine Identität
-            var players = FindObjectsByType<PlayerController>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+            var players = FindObjectsByType<PlayerController>(FindObjectsInactive.Exclude);
             if (players.Length > 0)
             {
                 var me = players[0].gameObject;

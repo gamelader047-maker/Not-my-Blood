@@ -53,7 +53,7 @@ namespace NotMyBlood.UI
         {
             if (player != null || Time.time < nextSearchTime) return;
             nextSearchTime = Time.time + 0.5f;
-            var found = FindObjectsByType<PlayerInteraction>(FindObjectsSortMode.None);
+            var found = FindObjectsByType<PlayerInteraction>();
             if (found.Length > 0) player = found[0];
         }
 

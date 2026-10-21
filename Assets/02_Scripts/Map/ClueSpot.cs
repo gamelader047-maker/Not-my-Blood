@@ -16,6 +16,7 @@ namespace NotMyBlood.Clues
 
         public int SpotId => spotId;
         public string RoomName => roomName;
+        public string LocationName => roomName;
 
         /// <summary>
         /// Prüft, ob die angegebene Spurkategorie an diesem Punkt erlaubt ist.

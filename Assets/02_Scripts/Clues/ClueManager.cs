@@ -7,7 +7,7 @@ namespace NotMyBlood.Clues
 {
     /// <summary>
     /// Notizbuch-Protokoll: alle Spuren, die DIESER Spieler notiert hat, in Fund-Reihenfolge.
-    /// Das Spawnen von Spuren kommt in Schritt 3 in den eigenen ClueSpawner.
+    /// Das Spawnen von Spuren wird über den ClueSpawner abgewickelt.
     /// </summary>
     public class ClueManager : MonoBehaviour
     {

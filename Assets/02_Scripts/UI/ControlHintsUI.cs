@@ -30,7 +30,7 @@ namespace NotMyBlood.UI
                 nextCheck = Time.time + 0.5f;
                 if (player == null)
                 {
-                    var found = FindObjectsByType<PlayerInteraction>(FindObjectsSortMode.None);
+                    var found = FindObjectsByType<PlayerInteraction>();
                     if (found.Length > 0) player = found[0];
                 }
                 carriesKit = player != null && player.GetComponentInChildren<AnalysisKit>() != null;

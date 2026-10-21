@@ -97,7 +97,7 @@ namespace NotMyBlood.Core
         public void RefreshPlayers()
         {
             registeredPlayers.Clear();
-            registeredPlayers.AddRange(FindObjectsByType<PlayerIdentity>(FindObjectsSortMode.None));
+            registeredPlayers.AddRange(FindObjectsByType<PlayerIdentity>());
         }
 
         public void SetPlayerReady(bool ready)

@@ -38,6 +38,7 @@ namespace NotMyBlood.Clues
         private bool recorded;
 
         public bool IsFake => isFake;
+        public ClueCategory Category => category;
 
         public ClueData Data => new ClueData
         {
@@ -50,6 +51,42 @@ namespace NotMyBlood.Clues
             clothingColor = clothingColor,
         };
 
+        /// <summary>
+        /// Richtet die Spur programmatisch ein (vom ClueSpawner aufgerufen).
+        /// </summary>
+        public void Setup(ClueCategory cat, BloodType bType, ShoeProfile sProfile, ClothingColor cColor, string loc, bool fake)
+        {
+            category = cat;
+            bloodType = bType;
+            shoeProfile = sProfile;
+            clothingColor = cColor;
+            location = loc;
+            isFake = fake;
+            ApplyVisual();
+        }
+
+        /// <summary>Fasern sollen im Spiel die Farbe haben, die im Notizbuch steht.</summary>
+        private void ApplyVisual()
+        {
+            if (category != ClueCategory.Faser) return;
+
+            Color color = clothingColor switch
+            {
+                ClothingColor.Rot => new Color(0.66f, 0.20f, 0.16f),
+                ClothingColor.Schwarz => new Color(0.15f, 0.13f, 0.16f),
+                _ => new Color(0.58f, 0.58f, 0.60f),
+            };
+
+            var block = new MaterialPropertyBlock();
+            foreach (var r in GetComponentsInChildren<Renderer>())
+            {
+                r.GetPropertyBlock(block);
+                block.SetColor("_BaseColor", color);
+                block.SetColor("_Color", color);
+                r.SetPropertyBlock(block);
+            }
+        }
+
         public void SetFakeStatus(bool fakeStatus)
         {
             isFake = fakeStatus;
@@ -57,7 +94,6 @@ namespace NotMyBlood.Clues
 
         public string GetInteractionPrompt()
         {
-            // Kurzer Text für den HUD-Hinweis; die Tasten zeigt das HUD selbst an
             return recorded ? $"Bereits notiert: {Data.DisplayName}" : $"Untersuchen: {Data.DisplayName}";
         }
 
