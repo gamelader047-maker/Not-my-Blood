@@ -6,12 +6,14 @@ using NotMyBlood.Core;
 namespace NotMyBlood.Clues
 {
     /// <summary>
-    /// Verwaltet das Notizbuch-Protokoll für gefundene Hinweise und benachrichtigt UI-Komponenten.
+    /// Notizbuch-Protokoll: alle Spuren, die DIESER Spieler notiert hat, in Fund-Reihenfolge.
+    /// Das Spawnen von Spuren kommt in Schritt 3 in den eigenen ClueSpawner.
     /// </summary>
     public class ClueManager : MonoBehaviour
     {
         public static ClueManager Instance { get; private set; }
 
+        /// <summary>Wird ausgelöst, sobald eine neue Spur notiert wurde (z. B. für das Notizbuch).</summary>
         public event Action<ClueData> ClueAdded;
 
         [SerializeField] private List<ClueData> m_CollectedClues = new List<ClueData>();
@@ -26,21 +28,33 @@ namespace NotMyBlood.Clues
                 Destroy(gameObject);
                 return;
             }
-
             Instance = this;
         }
 
+        private void OnDestroy()
+        {
+            if (Instance == this) Instance = null;
+        }
+
         /// <summary>
-        /// Fügt einen neuen Hinweis dem Notizbuch hinzu und feuert das Event.
+        /// Notiert eine Spur und setzt die Fundzeit (Sekunden seit Beginn der Ermittlung).
+        /// Doppeltes Notieren verhindert schon das ClueObject selbst – hier wird nicht nach Werten
+        /// gefiltert, weil zwei verschiedene Spuren gleich aussehen können (z. B. zweimal "Blut 0" im Flur).
         /// </summary>
         public void AddClue(ClueData clue)
         {
-            if (!m_CollectedClues.Contains(clue))
-            {
-                m_CollectedClues.Add(clue);
-                ClueAdded?.Invoke(clue);
-                Debug.Log($"[ClueManager] Neuer Hinweis hinzugefügt.");
-            }
+            clue.foundTime = GameRoundManager.Instance != null ? GameRoundManager.Instance.InvestigationTime : Time.timeSinceLevelLoad;
+
+            m_CollectedClues.Add(clue);
+            Debug.Log($"[ClueManager] Spur notiert: {clue.DisplayName} ({clue.TraitLabel}: {clue.ValueText}, {clue.LocationText}, {clue.FoundTimeText}) – insgesamt {m_CollectedClues.Count}");
+
+            ClueAdded?.Invoke(clue);
+        }
+
+        /// <summary>Leert das Protokoll, z. B. zu Beginn einer neuen Runde.</summary>
+        public void ClearClues()
+        {
+            m_CollectedClues.Clear();
         }
     }
 }

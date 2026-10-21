@@ -98,7 +98,8 @@ namespace NotMyBlood.Core
         private static List<T> SelectAllowedValues<T>(int playerCount) where T : Enum
         {
             T[] allValues = (T[])Enum.GetValues(typeof(T));
-            List<T> validValues = allValues.Where(v => Convert.ToInt32(v) != 0).ToList(); // Null/Unbekannt filtern
+            // Alle Werte sind gültig – auch der erste Enum-Wert (Blutgruppe 0, Kreise, Rot)!
+            List<T> validValues = allValues.ToList();
 
             if (playerCount >= 6)
             {

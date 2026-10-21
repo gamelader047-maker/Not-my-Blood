@@ -63,9 +63,10 @@ namespace NotMyBlood.Player
 
             Color targetColor = Traits.color switch
             {
-                ClothingColor.Rot => Color.red,
-                ClothingColor.Schwarz => Color.black,
-                ClothingColor.Grau => Color.gray,
+                // Gleiche Töne wie die Farbpunkte im Notizbuch
+                ClothingColor.Rot => new Color(0.66f, 0.20f, 0.16f),
+                ClothingColor.Schwarz => new Color(0.15f, 0.13f, 0.16f),
+                ClothingColor.Grau => new Color(0.58f, 0.58f, 0.60f),
                 _ => Color.white
             };
 
