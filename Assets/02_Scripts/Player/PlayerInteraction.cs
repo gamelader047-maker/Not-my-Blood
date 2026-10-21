@@ -64,7 +64,7 @@ namespace NotMyBlood.Player
         private void Update()
         {
             var keyboard = Keyboard.current;
-            if (playerCamera == null || keyboard == null || UIState.BlocksPlayerInput)
+            if (playerCamera == null || keyboard == null || UIState.BlocksInteraction)   // auch im Meeting gesperrt
             {
                 CancelHold();
                 CurrentTarget = null;

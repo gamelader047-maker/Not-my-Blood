@@ -15,6 +15,8 @@ namespace NotMyBlood.UI
         [SerializeField] private GameObject root;
         [SerializeField] private TMP_Text promptText;
         [SerializeField] private GameObject holdRow;
+        [Tooltip("Leer = Text \"Text\" in der Hold-Zeile wird automatisch gesucht.")]
+        [SerializeField] private TMP_Text holdText;
 
         private float nextSearch;
 
@@ -36,6 +38,17 @@ namespace NotMyBlood.UI
 
             if (promptText != null) promptText.text = target.GetInteractionPrompt();
             if (holdRow != null && holdRow.activeSelf != player.CanHoldCurrentTarget) holdRow.SetActive(player.CanHoldCurrentTarget);
+
+            // Beschriftung passend zum Ziel: "Analysiere Spur" oder "Fotografiere Schuh"
+            if (player.CanHoldCurrentTarget && target is IHoldInteractable holdable)
+            {
+                if (holdText == null && holdRow != null)
+                {
+                    var t = holdRow.transform.Find("Text");
+                    if (t != null) holdText = t.GetComponent<TMP_Text>();
+                }
+                if (holdText != null) holdText.text = holdable.HoldActionLabel;
+            }
         }
     }
 }

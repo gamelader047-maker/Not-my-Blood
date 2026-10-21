@@ -21,18 +21,29 @@ namespace NotMyBlood.UI
         [SerializeField] private float resultDisplayTime = 3f;
 
         private PlayerInteraction subscribed;
+        private PlayerKnowledge knowledgeSubscribed;
         private float hideResultAt;
         private float nextSearchTime;
 
         private void OnDisable()
         {
             Subscribe(null);
+            if (knowledgeSubscribed != null) knowledgeSubscribed.Feedback -= ShowResult;
+            knowledgeSubscribed = null;
         }
 
         private void Update()
         {
             FindPlayerIfNeeded();
             if (player != subscribed) Subscribe(player);
+
+            // Meldungen vom Nadeltest, z. B. "Nadeltest Dummy 2: Blutgruppe A"
+            if (PlayerKnowledge.Instance != knowledgeSubscribed)
+            {
+                if (knowledgeSubscribed != null) knowledgeSubscribed.Feedback -= ShowResult;
+                knowledgeSubscribed = PlayerKnowledge.Instance;
+                if (knowledgeSubscribed != null) knowledgeSubscribed.Feedback += ShowResult;
+            }
 
             bool holding = player != null && player.IsHolding;
             if (holdRoot != null && holdRoot.activeSelf != holding) holdRoot.SetActive(holding);

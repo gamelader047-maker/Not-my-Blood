@@ -31,9 +31,22 @@ namespace NotMyBlood.Clues
             Instance = this;
         }
 
+        private void Start()
+        {
+            // Abo in Start, weil GameRoundManager.Instance erst nach Awake existiert
+            if (GameRoundManager.Instance != null) GameRoundManager.Instance.PhaseChanged += OnPhaseChanged;
+        }
+
         private void OnDestroy()
         {
+            if (GameRoundManager.Instance != null) GameRoundManager.Instance.PhaseChanged -= OnPhaseChanged;
             if (Instance == this) Instance = null;
+        }
+
+        private void OnPhaseChanged(GamePhase phase)
+        {
+            // Neue Runde → Notizbuch-Protokoll leeren
+            if (phase == GamePhase.Cutscene) ClearClues();
         }
 
         /// <summary>

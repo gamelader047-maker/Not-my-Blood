@@ -98,6 +98,16 @@ namespace NotMyBlood.Core
             {
                 ScheduleRandomBlackout();
             }
+            else
+            {
+                // Stromausfall gibt es nur in der Ermittlung: geplante Ausfälle stoppen, Licht wieder an
+                StopAllCoroutines();
+                blackoutRoutine = null;
+                scheduledBlackoutRoutine = null;
+                blackoutEndTime = 0f;
+                if (IsPowerOut) RestorePower();
+                if (newPhase == GamePhase.Cutscene) WasSabotaged = false;   // neue Runde: Sicherungskasten wieder frei
+            }
         }
 
         // ------------------------------------------------------------------ Auslöser
@@ -227,6 +237,7 @@ namespace NotMyBlood.Core
             float factor = Mathf.Lerp(1f, ambientDimFactor, darkness);
 
             // Skybox-Modus (Standard): URP liest das Umgebungslicht aus der Ambient-Probe – NICHT entfernen!
+            RenderSettings.ambientProbe = originalAmbientProbe * factor;
             RenderSettings.ambientIntensity = originalAmbientIntensity * factor;
             RenderSettings.ambientSkyColor = Scale(originalSkyColor, factor);
             RenderSettings.ambientEquatorColor = Scale(originalEquatorColor, factor);

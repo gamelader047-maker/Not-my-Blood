@@ -146,6 +146,17 @@ namespace NotMyBlood.Clues
             return true;
         }
 
+        /// <summary>Alle Spuren, die gerade auf der Map liegen (für die Dummy-Abstimmung und die Auflösung).</summary>
+        public List<ClueObject> GetSpawnedClues()
+        {
+            var result = new List<ClueObject>();
+            foreach (var obj in spawnedClues.Values)
+            {
+                if (obj != null && obj.TryGetComponent(out ClueObject clue)) result.Add(clue);
+            }
+            return result;
+        }
+
         // ------------------------------------------------------------------ Spawnen
 
         private void SpawnRealClue(ClueCategory category)

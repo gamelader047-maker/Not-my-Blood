@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -8,7 +9,7 @@ namespace NotMyBlood.Core
 {
     /// <summary>
     /// Steuert den Ablauf einer Runde (Konzept 1.1, Kap. 2):
-    /// Cutscene → Ermittlung → Meeting → Abstimmung → Auflösung, jeweils mit Timer.
+    /// Cutscene → Ermittlung → Meeting → Abstimmung → (Stichwahl) → Auflösung, jeweils mit Timer.
     /// Beim Rundenstart werden Merkmale und Mörder-Rolle verteilt (TraitAssigner).
     /// Andere Systeme abonnieren PhaseChanged in Start() (nicht OnEnable), weil Instance erst nach Awake gesetzt ist.
     /// </summary>
@@ -23,6 +24,7 @@ namespace NotMyBlood.Core
         [SerializeField] private float investigationDuration = 360f;
         [SerializeField] private float meetingDuration = 180f;
         [SerializeField] private float votingDuration = 30f;
+        [SerializeField] private float runoffDuration = 30f;
         [SerializeField] private float resolutionDuration = 15f;
 
         [Header("Einstellungen")]
@@ -37,6 +39,10 @@ namespace NotMyBlood.Core
         public float PhaseTimeRemaining { get; private set; }
         /// <summary>Sekunden seit Beginn der Ermittlung (für Fundzeiten im Notizbuch).</summary>
         public float InvestigationTime { get; private set; }
+        /// <summary>Zählt bei jedem Rundenstart hoch (andere Systeme erkennen daran eine neue Runde).</summary>
+        public int RoundNumber { get; private set; }
+        /// <summary>True, wenn die Auflösung vorbei ist und auf eine neue Runde gewartet wird.</summary>
+        public bool IsRoundOver { get; private set; }
         public IReadOnlyList<PlayerIdentity> Players => registeredPlayers;
 
         private bool isRunning;
@@ -56,9 +62,13 @@ namespace NotMyBlood.Core
             if (Instance == this) Instance = null;
         }
 
-        private void Start()
+        private IEnumerator Start()
         {
-            if (startOnPlay) StartRound();
+            if (!startOnPlay) yield break;
+            // Einen Frame warten: dann haben alle anderen Systeme PhaseChanged in ihrem Start() abonniert
+            // und verpassen die erste Cutscene nicht.
+            yield return null;
+            StartRound();
         }
 
         private void Update()
@@ -87,10 +97,12 @@ namespace NotMyBlood.Core
                 Debug.LogWarning("[GameRoundManager] Merkmale konnten nicht verteilt werden – Runde läuft trotzdem (Test).");
             }
 
+            RoundNumber++;
             InvestigationTime = 0f;
+            IsRoundOver = false;
             isRunning = true;
             ChangePhase(GamePhase.Cutscene);
-            Debug.Log($"[GameRoundManager] Runde gestartet mit {registeredPlayers.Count} Spielern.");
+            Debug.Log($"[GameRoundManager] Runde {RoundNumber} gestartet mit {registeredPlayers.Count} Spielern.");
         }
 
         /// <summary>Sucht alle Spieler (inkl. Test-Dummies) in der Szene.</summary>
@@ -98,6 +110,12 @@ namespace NotMyBlood.Core
         {
             registeredPlayers.Clear();
             registeredPlayers.AddRange(FindObjectsByType<PlayerIdentity>());
+        }
+
+        /// <summary>Beendet die aktuelle Phase sofort (z. B. wenn alle abgestimmt haben).</summary>
+        public void SkipCurrentPhase()
+        {
+            if (isRunning) ProceedToNextPhase();
         }
 
         public void SetPlayerReady(bool ready)
@@ -109,11 +127,30 @@ namespace NotMyBlood.Core
         {
             switch (CurrentPhase)
             {
-                case GamePhase.Cutscene: ChangePhase(GamePhase.Ermittlung); break;
-                case GamePhase.Ermittlung: ChangePhase(GamePhase.Meeting); break;
-                case GamePhase.Meeting: ChangePhase(GamePhase.Abstimmung); break;
-                case GamePhase.Abstimmung: ChangePhase(GamePhase.Aufloesung); break;
-                case GamePhase.Aufloesung: isRunning = false; break;
+                case GamePhase.Cutscene:
+                    ChangePhase(GamePhase.Ermittlung);
+                    break;
+                case GamePhase.Ermittlung:
+                    ChangePhase(GamePhase.Meeting);
+                    break;
+                case GamePhase.Meeting:
+                    ChangePhase(GamePhase.Abstimmung);
+                    break;
+                case GamePhase.Abstimmung:
+                    // Gleichstand → Stichwahl zwischen den Gleichplatzierten
+                    var outcome = VoteManager.Instance != null ? VoteManager.Instance.Evaluate(false) : VoteOutcome.Entschieden;
+                    ChangePhase(outcome == VoteOutcome.Gleichstand ? GamePhase.Stichwahl : GamePhase.Aufloesung);
+                    break;
+                case GamePhase.Stichwahl:
+                    // Erneuter Gleichstand → Mörder gewinnt (entscheidet der VoteManager)
+                    if (VoteManager.Instance != null) VoteManager.Instance.Evaluate(true);
+                    ChangePhase(GamePhase.Aufloesung);
+                    break;
+                case GamePhase.Aufloesung:
+                    isRunning = false;
+                    IsRoundOver = true;
+                    Debug.Log("[GameRoundManager] Runde vorbei. Neue Runde mit dem Button in der Auflösung oder Taste R.");
+                    break;
             }
         }
 
@@ -133,6 +170,7 @@ namespace NotMyBlood.Core
             GamePhase.Ermittlung => investigationDuration,
             GamePhase.Meeting => meetingDuration,
             GamePhase.Abstimmung => votingDuration,
+            GamePhase.Stichwahl => runoffDuration,
             GamePhase.Aufloesung => resolutionDuration,
             _ => 0f,
         };

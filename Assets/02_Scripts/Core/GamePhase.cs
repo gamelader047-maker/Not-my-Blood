@@ -1,4 +1,3 @@
-
 namespace NotMyBlood.Core
 {
     /// <summary>
@@ -11,6 +10,7 @@ namespace NotMyBlood.Core
         Ermittlung,
         Meeting,
         Abstimmung,
+        Stichwahl,
         Aufloesung
     }
 }

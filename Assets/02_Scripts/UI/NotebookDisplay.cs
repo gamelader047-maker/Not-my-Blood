@@ -91,6 +91,12 @@ namespace NotMyBlood.UI
         public void Refresh(bool selectNewest = false)
         {
             var clues = Clues;
+            if (seenCount > clues.Count)
+            {
+                // Neue Runde: Protokoll wurde geleert
+                seenCount = 0;
+                selectedIndex = -1;
+            }
             ClearSpawned();
 
             if (rowTemplate != null && listContent != null)

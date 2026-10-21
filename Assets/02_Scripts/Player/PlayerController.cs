@@ -28,6 +28,9 @@ namespace NotMyBlood.Player
         private bool isCrouching = false;
         private float targetHeight;
 
+        /// <summary>True, solange der Spieler geduckt ist (Schuh-Foto geht nur geduckt).</summary>
+        public bool IsCrouching => isCrouching;
+
         private void Awake()
         {
             characterController = GetComponent<CharacterController>();
@@ -46,6 +49,32 @@ namespace NotMyBlood.Player
             HandleMouseLook();
             HandleMovement();
             HandleCrouch();
+        }
+
+        /// <summary>
+        /// Setzt den Spieler auf einen Punkt am Boden (z. B. Platz am Meeting-Tisch) und dreht ihn in Blickrichtung.
+        /// Der CharacterController muss dafür kurz aus sein, sonst überschreibt er die Position.
+        /// </summary>
+        public void Teleport(Vector3 floorPosition, Quaternion rotation)
+        {
+            isCrouching = false;
+            targetHeight = standingHeight;
+
+            characterController.enabled = false;
+            characterController.height = standingHeight;
+            float pivotHeight = standingHeight * 0.5f - characterController.center.y + characterController.skinWidth;
+            transform.SetPositionAndRotation(floorPosition + Vector3.up * pivotHeight, Quaternion.Euler(0f, rotation.eulerAngles.y, 0f));
+            characterController.enabled = true;
+
+            xRotation = 0f;
+            velocity = Vector3.zero;
+            if (cameraHolder != null)
+            {
+                cameraHolder.localRotation = Quaternion.identity;
+                Vector3 cameraPos = cameraHolder.localPosition;
+                cameraPos.y = standingHeight * 0.45f;
+                cameraHolder.localPosition = cameraPos;
+            }
         }
 
         private void HandleMouseLook()
@@ -75,7 +104,7 @@ namespace NotMyBlood.Player
             float x = 0f;
             float z = 0f;
 
-            if (Keyboard.current != null && !UIState.BlocksPlayerInput)
+            if (Keyboard.current != null && !UIState.BlocksMovement)   // Notizbuch, Abstimmung oder Meeting
             {
                 if (Keyboard.current.wKey.isPressed) z += 1f;
                 if (Keyboard.current.sKey.isPressed) z -= 1f;
@@ -99,7 +128,7 @@ namespace NotMyBlood.Player
             if (Keyboard.current == null) return;
 
             // Toggle Crouch with Left Shift
-            if (!UIState.BlocksPlayerInput && Keyboard.current.leftShiftKey.wasPressedThisFrame)
+            if (!UIState.BlocksMovement && Keyboard.current.leftShiftKey.wasPressedThisFrame)
             {
                 isCrouching = !isCrouching;
                 targetHeight = isCrouching ? crouchHeight : standingHeight;

@@ -111,6 +111,7 @@ namespace NotMyBlood.EditorTools
                 EditorUtility.DisplayProgressBar("Notizbuch-UI", "UI aufbauen …", 0.8f);
                 var canvas = BuildCanvas();
                 Undo.RegisterCreatedObjectUndo(canvas, "Notizbuch-UI erstellen");
+                RoundUIBuilder.RebuildSuspectsPage();   // Seite "Verdächtige" (Schritt 4) gleich mit aufbauen
                 EditorSceneManager.MarkSceneDirty(canvas.scene);
                 Selection.activeGameObject = canvas;
 

@@ -14,6 +14,50 @@ namespace NotMyBlood.Core
         public bool IsCarried => isCarried;
         public bool HasCharges => remainingCharges > 0;
 
+        // Startzustand für jede neue Runde
+        private Transform initialParent;
+        private Vector3 initialLocalPosition;
+        private Quaternion initialLocalRotation;
+        private int initialCharges;
+        private bool initialKinematic;
+
+        private void Awake()
+        {
+            initialParent = transform.parent;
+            initialLocalPosition = transform.localPosition;
+            initialLocalRotation = transform.localRotation;
+            initialCharges = remainingCharges;
+            if (TryGetComponent(out Rigidbody body)) initialKinematic = body.isKinematic;
+        }
+
+        private void Start()
+        {
+            if (GameRoundManager.Instance != null) GameRoundManager.Instance.PhaseChanged += OnPhaseChanged;
+        }
+
+        private void OnDestroy()
+        {
+            if (GameRoundManager.Instance != null) GameRoundManager.Instance.PhaseChanged -= OnPhaseChanged;
+        }
+
+        private void OnPhaseChanged(GamePhase phase)
+        {
+            if (phase == GamePhase.Cutscene) ResetKit();
+        }
+
+        /// <summary>Neue Runde: Koffer zurück an den Startplatz, Ladungen wieder voll.</summary>
+        public void ResetKit()
+        {
+            transform.SetParent(initialParent, false);
+            transform.localPosition = initialLocalPosition;
+            transform.localRotation = initialLocalRotation;
+            isCarried = false;
+            carrierTransform = null;
+            remainingCharges = initialCharges;
+            foreach (var col in GetComponentsInChildren<Collider>()) col.enabled = true;
+            if (TryGetComponent(out Rigidbody body)) body.isKinematic = initialKinematic;
+        }
+
         public string GetInteractionPrompt()
         {
             if (isCarried)

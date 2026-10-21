@@ -59,6 +59,7 @@ namespace NotMyBlood.UI
             GamePhase.Ermittlung => "Ermittlung",
             GamePhase.Meeting => "Meeting",
             GamePhase.Abstimmung => "Abstimmung",
+            GamePhase.Stichwahl => "Stichwahl",
             GamePhase.Aufloesung => "Auflösung",
             _ => phase.ToString(),
         };
