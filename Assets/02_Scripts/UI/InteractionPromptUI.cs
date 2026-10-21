@@ -22,11 +22,10 @@ namespace NotMyBlood.UI
 
         private void Update()
         {
-            if (player == null && Time.time >= nextSearch)
+            if ((player == null || !player.isActiveAndEnabled) && Time.time >= nextSearch)
             {
                 nextSearch = Time.time + 0.5f;
-                var found = FindObjectsByType<PlayerInteraction>();
-                if (found.Length > 0) player = found[0];
+                player = PlayerInteraction.FindLocal();   // im Multiplayer gibt es mehrere Spieler-Kopien
             }
 
             IInteractable target = player != null ? player.CurrentTarget : null;

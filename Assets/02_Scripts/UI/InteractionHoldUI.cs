@@ -62,10 +62,9 @@ namespace NotMyBlood.UI
 
         private void FindPlayerIfNeeded()
         {
-            if (player != null || Time.time < nextSearchTime) return;
+            if ((player != null && player.isActiveAndEnabled) || Time.time < nextSearchTime) return;
             nextSearchTime = Time.time + 0.5f;
-            var found = FindObjectsByType<PlayerInteraction>();
-            if (found.Length > 0) player = found[0];
+            player = PlayerInteraction.FindLocal();   // im Multiplayer gibt es mehrere Spieler-Kopien
         }
 
         private void Subscribe(PlayerInteraction target)

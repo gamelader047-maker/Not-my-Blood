@@ -51,6 +51,9 @@ namespace NotMyBlood.Player
             HandleCrouch();
         }
 
+        /// <summary>Nach einem Teleport (Netzwerk: sofort springen statt über die Map gleiten).</summary>
+        public event System.Action Teleported;
+
         /// <summary>
         /// Setzt den Spieler auf einen Punkt am Boden (z. B. Platz am Meeting-Tisch) und dreht ihn in Blickrichtung.
         /// Der CharacterController muss dafür kurz aus sein, sonst überschreibt er die Position.
@@ -75,6 +78,7 @@ namespace NotMyBlood.Player
                 cameraPos.y = standingHeight * 0.45f;
                 cameraHolder.localPosition = cameraPos;
             }
+            Teleported?.Invoke();
         }
 
         private void HandleMouseLook()

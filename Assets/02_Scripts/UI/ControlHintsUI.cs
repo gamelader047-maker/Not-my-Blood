@@ -21,17 +21,16 @@ namespace NotMyBlood.UI
 
         private void Update()
         {
-            bool visible = !UIState.IsNotebookOpen;
+            bool visible = !UIState.IsNotebookOpen && !UIState.IsMenuOpen;
             if (root != null && root.activeSelf != visible) root.SetActive(visible);
 
             // Nur zweimal pro Sekunde nachschauen, ob der Koffer getragen wird
             if (Time.time >= nextCheck)
             {
                 nextCheck = Time.time + 0.5f;
-                if (player == null)
+                if (player == null || !player.isActiveAndEnabled)
                 {
-                    var found = FindObjectsByType<PlayerInteraction>();
-                    if (found.Length > 0) player = found[0];
+                    player = PlayerInteraction.FindLocal();   // im Multiplayer gibt es mehrere Spieler-Kopien
                 }
                 carriesKit = player != null && player.GetComponentInChildren<AnalysisKit>() != null;
             }

@@ -29,6 +29,7 @@ namespace NotMyBlood.UI
         private void ToggleNotebook()
         {
             if (Keyboard.current == null) return;
+            if (UIState.IsMenuOpen && !isOpen) return;   // Hauptmenü/Pause: Tab und I nicht abfangen (z. B. beim Tippen)
 
             // Öffnen/Schließen mit der Tab-Taste oder I-Taste
             if (Keyboard.current.tabKey.wasPressedThisFrame || Keyboard.current.iKey.wasPressedThisFrame)

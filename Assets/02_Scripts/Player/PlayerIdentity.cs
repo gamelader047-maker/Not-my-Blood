@@ -42,8 +42,11 @@ namespace NotMyBlood.Player
             private set => isMurderer = value;
         }
 
-        /// <summary>True für den Spieler, der an diesem Rechner spielt (hat einen PlayerController).</summary>
-        public bool IsLocal => TryGetComponent<PlayerController>(out _);
+        /// <summary>
+        /// True für den Spieler, der an diesem Rechner spielt. Im Multiplayer haben alle Spieler-Kopien einen
+        /// PlayerController, aber nur beim eigenen ist er eingeschaltet.
+        /// </summary>
+        public bool IsLocal => TryGetComponent(out PlayerController controller) && controller.enabled;
 
         private void Awake()
         {
@@ -63,6 +66,12 @@ namespace NotMyBlood.Player
             IsMurderer = murderer;
 
             ApplyClothingColor();
+        }
+
+        /// <summary>Nur den Anzeigenamen setzen (z. B. Name aus dem Hauptmenü), Merkmale bleiben.</summary>
+        public void SetDisplayName(string name)
+        {
+            PlayerName = name;
         }
 
         /// <summary>

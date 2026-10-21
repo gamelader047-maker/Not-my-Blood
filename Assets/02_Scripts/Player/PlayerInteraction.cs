@@ -43,6 +43,19 @@ namespace NotMyBlood.Player
         /// <summary>True, wenn das aktuelle Ziel eine Halte-Aktion hat, die der Spieler gerade ausführen darf.</summary>
         public bool CanHoldCurrentTarget { get; private set; }
 
+        /// <summary>
+        /// Der Spieler an diesem Rechner. Im Multiplayer hat jede Spieler-Kopie eine PlayerInteraction,
+        /// eingeschaltet ist sie aber nur beim eigenen Spieler.
+        /// </summary>
+        public static PlayerInteraction FindLocal()
+        {
+            foreach (var p in FindObjectsByType<PlayerInteraction>())
+            {
+                if (p.isActiveAndEnabled) return p;
+            }
+            return null;
+        }
+
         private const int MaxHits = 8;
         private readonly RaycastHit[] hits = new RaycastHit[MaxHits];
         private Camera playerCamera;
