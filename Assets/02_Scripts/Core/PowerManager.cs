@@ -6,30 +6,24 @@ namespace NotMyBlood.Core
 {
     /// <summary>
     /// Steuert den Strom im Haus (Konzept 1.1):
-    /// - Sabotage am Sicherungskasten: Licht geht nach 20 s aus, 15 s Dunkelheit, 1x pro Runde
-    /// - Zufälliger Stromausfall: 50 % Chance, irgendwann zwischen Minute 1 und 4
-    /// Während der Dunkelheit werden die Raumlichter ausgeschaltet UND das Umgebungslicht gedimmt
-    /// (Ambient-Probe, Ambient-Farben/-Intensität, Reflexionen). Danach kommt alles auf die Originalwerte zurück.
+    /// - Sabotage am Sicherungskasten: Licht geht nach 20 s aus, 15 s Dunkelheit, 1x per Runde (nur in Ermittlung)
+    /// - Zufälliger Stromausfall: 50 % Chance, irgendwann zwischen Minute 1 und 4 der Ermittlung
     /// </summary>
     public class PowerManager : MonoBehaviour
     {
         public static PowerManager Instance { get; private set; }
 
         [Header("Power Settings")]
-        [Tooltip("Die \"Lichter\"-Gruppe aus der Hierarchie. Leer = wird per Name gesucht.")]
         [SerializeField] private GameObject lightsGroup;
         [SerializeField] private float sabotageDelay = 20f;
         [SerializeField] private float blackoutDuration = 15f;
         [Range(0f, 1f)]
         [SerializeField] private float randomBlackoutChance = 0.5f;
-        [Tooltip("Zeitfenster für den zufälligen Ausfall in Sekunden (60–240 = Minute 1 bis 4).")]
         [SerializeField] private Vector2 randomBlackoutWindow = new Vector2(60f, 240f);
 
         [Header("Dunkelheit")]
-        [Tooltip("So viel Umgebungslicht bleibt im Dunkeln übrig (0 = komplett schwarz, 1 = unverändert).")]
         [Range(0f, 1f)]
         [SerializeField] private float ambientDimFactor = 0.08f;
-        [Tooltip("Weitere Lichter, die mit gedimmt werden, z. B. das Directional Light, falls es durchs Dach scheint.")]
         [SerializeField] private Light[] extraLightsToDim = new Light[0];
         [SerializeField] private float fadeOutTime = 0.15f;
         [SerializeField] private float fadeInTime = 0.6f;
@@ -39,8 +33,8 @@ namespace NotMyBlood.Core
 
         private float blackoutEndTime;
         private Coroutine blackoutRoutine;
+        private Coroutine scheduledBlackoutRoutine;
 
-        // Originalwerte des Umgebungslichts (einmal beim Start gemerkt)
         private bool originalsSaved;
         private SphericalHarmonicsL2 originalAmbientProbe;
         private float originalAmbientIntensity;
@@ -60,6 +54,12 @@ namespace NotMyBlood.Core
             }
         }
 
+        private void OnDisable()
+        {
+            // Nie mit gedimmter Szene zurückbleiben (z. B. Szenenwechsel mitten im Stromausfall)
+            if (IsPowerOut) RestorePower();
+        }
+
         private void Start()
         {
             if (lightsGroup == null)
@@ -68,25 +68,49 @@ namespace NotMyBlood.Core
             }
 
             SaveOriginalLighting();
-            ScheduleRandomBlackout();
-        }
 
-        private void OnDisable()
-        {
-            // Nie mit gedimmter Szene zurückbleiben (z. B. Szenenwechsel mitten im Stromausfall)
-            if (IsPowerOut) RestorePower();
+            // Abo erst in Start: dann existiert GameRoundManager.Instance sicher
+            if (GameRoundManager.Instance != null)
+            {
+                GameRoundManager.Instance.PhaseChanged += OnPhaseChanged;
+            }
+
+            // Falls das Spiel direkt in der Ermittlung startet
+            if (GameRoundManager.Instance != null && GameRoundManager.Instance.CurrentPhase == GamePhase.Ermittlung)
+            {
+                ScheduleRandomBlackout();
+            }
         }
 
         private void OnDestroy()
         {
+            if (GameRoundManager.Instance != null)
+            {
+                GameRoundManager.Instance.PhaseChanged -= OnPhaseChanged;
+            }
             if (Instance == this) Instance = null;
+        }
+
+        private void OnPhaseChanged(GamePhase newPhase)
+        {
+            // Zufälligen Stromausfall erst planen, wenn die Ermittlungsphase beginnt
+            if (newPhase == GamePhase.Ermittlung)
+            {
+                ScheduleRandomBlackout();
+            }
         }
 
         // ------------------------------------------------------------------ Auslöser
 
-        /// <summary>Wird aufgerufen, wenn der Mörder den Sicherungskasten manipuliert.</summary>
+        /// <summary>Wird aufgerufen, wenn der Mörder den Sicherungskasten manipuliert (nur in Ermittlung).</summary>
         public void SabotagePower()
         {
+            if (GameRoundManager.Instance != null && GameRoundManager.Instance.CurrentPhase != GamePhase.Ermittlung)
+            {
+                Debug.Log("[PowerManager] Sabotage ist außerhalb der Ermittlungsphase nicht erlaubt!");
+                return;
+            }
+
             if (WasSabotaged)
             {
                 Debug.Log("[PowerManager] Stromkasten wurde in dieser Runde bereits manipuliert!");
@@ -98,10 +122,6 @@ namespace NotMyBlood.Core
             StartCoroutine(BlackoutAfterDelay(sabotageDelay));
         }
 
-        /// <summary>
-        /// Startet sofort einen Stromausfall. Läuft schon einer, wird er bei Bedarf verlängert,
-        /// statt dass sich zwei Ausfälle gegenseitig das Licht ein- und ausschalten.
-        /// </summary>
         public void TriggerBlackout(float duration)
         {
             blackoutEndTime = Mathf.Max(blackoutEndTime, Time.time + duration);
@@ -113,11 +133,13 @@ namespace NotMyBlood.Core
 
         private void ScheduleRandomBlackout()
         {
-            if (Random.value > randomBlackoutChance) return;
+            if (UnityEngine.Random.value > randomBlackoutChance) return;
 
-            float time = Random.Range(randomBlackoutWindow.x, randomBlackoutWindow.y);
+            float time = UnityEngine.Random.Range(randomBlackoutWindow.x, randomBlackoutWindow.y);
             Debug.Log($"[PowerManager] Zufälliger Stromausfall für diese Runde geplant in {time:F1} Sekunden.");
-            StartCoroutine(BlackoutAfterDelay(time));
+            
+            if (scheduledBlackoutRoutine != null) StopCoroutine(scheduledBlackoutRoutine);
+            scheduledBlackoutRoutine = StartCoroutine(BlackoutAfterDelay(time));
         }
 
         private IEnumerator BlackoutAfterDelay(float delay)
@@ -178,7 +200,7 @@ namespace NotMyBlood.Core
         {
             originalAmbientProbe = RenderSettings.ambientProbe;
             originalAmbientIntensity = RenderSettings.ambientIntensity;
-            originalSkyColor = RenderSettings.ambientSkyColor;          // = RenderSettings.ambientLight
+            originalSkyColor = RenderSettings.ambientSkyColor;
             originalEquatorColor = RenderSettings.ambientEquatorColor;
             originalGroundColor = RenderSettings.ambientGroundColor;
             originalReflectionIntensity = RenderSettings.reflectionIntensity;
@@ -204,18 +226,19 @@ namespace NotMyBlood.Core
 
             float factor = Mathf.Lerp(1f, ambientDimFactor, darkness);
 
-            // Skybox-Modus (Standard): URP liest das Umgebungslicht aus der Ambient-Probe
-            RenderSettings.ambientProbe = originalAmbientProbe * factor;
-            // Color-/Gradient-Modus: Ambient-Farben; Intensität für spätere Neuberechnungen
+            // Skybox-Modus (Standard): URP liest das Umgebungslicht aus der Ambient-Probe – NICHT entfernen!
+            RenderSettings.ambientIntensity = originalAmbientIntensity * factor;
             RenderSettings.ambientSkyColor = Scale(originalSkyColor, factor);
             RenderSettings.ambientEquatorColor = Scale(originalEquatorColor, factor);
             RenderSettings.ambientGroundColor = Scale(originalGroundColor, factor);
-            RenderSettings.ambientIntensity = originalAmbientIntensity * factor;
             RenderSettings.reflectionIntensity = originalReflectionIntensity * factor;
 
             for (int i = 0; i < extraLightsToDim.Length; i++)
             {
-                if (extraLightsToDim[i] != null) extraLightsToDim[i].intensity = originalExtraIntensities[i] * factor;
+                if (extraLightsToDim[i] != null) 
+                {
+                    extraLightsToDim[i].intensity = originalExtraIntensities[i] * factor;
+                }
             }
         }
 

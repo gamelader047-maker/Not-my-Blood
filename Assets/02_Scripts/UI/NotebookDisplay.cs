@@ -3,13 +3,12 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using NotMyBlood.Core;
+using NotMyBlood.Clues;
 
 namespace NotMyBlood.UI
 {
     /// <summary>
-    /// Zeigt die gesammelten Spuren im Notizbuch an:
-    /// links die Liste, rechts die Details zur gewählten Spur und eine Übersicht nach Merkmal.
-    /// Liegt auf dem NotebookPanel und baut sich bei jedem Öffnen neu auf (OnEnable).
+    /// Zeigt die gesammelten Spuren im Notizbuch an.
     /// </summary>
     public class NotebookDisplay : MonoBehaviour
     {
@@ -54,7 +53,7 @@ namespace NotMyBlood.UI
         private readonly List<NotebookClueRow> rows = new List<NotebookClueRow>();
         private readonly List<GameObject> spawned = new List<GameObject>();
         private int selectedIndex = -1;
-        private int seenCount;                 // so viele Spuren kannte der Spieler beim letzten Schliessen
+        private int seenCount;
         private ClueManager subscribedManager;
 
         private List<ClueData> Clues => ClueManager.Instance != null ? ClueManager.Instance.collectedClues : NoClues;
@@ -69,7 +68,7 @@ namespace NotMyBlood.UI
         private void OnDisable()
         {
             Unsubscribe();
-            seenCount = Clues.Count;   // alles, was jetzt da ist, gilt beim nächsten Öffnen nicht mehr als "neu"
+            seenCount = Clues.Count;
         }
 
         private void Subscribe()
@@ -89,13 +88,11 @@ namespace NotMyBlood.UI
 
         private void OnClueAdded(ClueData clue) => Refresh(selectNewest: true);
 
-        /// <summary>Baut Liste, Details und Übersicht neu auf.</summary>
         public void Refresh(bool selectNewest = false)
         {
             var clues = Clues;
             ClearSpawned();
 
-            // Linke Seite: eine Zeile pro Spur
             if (rowTemplate != null && listContent != null)
             {
                 for (int i = 0; i < clues.Count; i++)
@@ -121,7 +118,6 @@ namespace NotMyBlood.UI
 
             if (emptyListHint != null) emptyListHint.SetActive(clues.Count == 0);
 
-            // Auswahl: neue Spur bevorzugen, sonst bisherige Auswahl behalten
             if (selectNewest && clues.Count > seenCount) selectedIndex = clues.Count - 1;
             if (selectedIndex < 0 || selectedIndex >= clues.Count) selectedIndex = clues.Count > 0 ? 0 : -1;
             Select(selectedIndex);
@@ -129,7 +125,6 @@ namespace NotMyBlood.UI
             BuildOverview(clues);
         }
 
-        /// <summary>Zeigt die Spur mit diesem Index rechts im Detail an.</summary>
         public void Select(int index)
         {
             var clues = Clues;
@@ -159,7 +154,6 @@ namespace NotMyBlood.UI
             var shown = new HashSet<string>();
             foreach (var clue in clues)
             {
-                // Jeden Wert pro Merkmal nur einmal zeigen
                 if (!shown.Add(clue.category + ":" + clue.ValueText)) continue;
 
                 RectTransform parent = clue.category switch
@@ -182,7 +176,7 @@ namespace NotMyBlood.UI
             foreach (var go in spawned)
             {
                 if (go == null) continue;
-                go.SetActive(false);   // sofort aus dem Layout nehmen, Destroy passiert erst am Frame-Ende
+                go.SetActive(false);
                 Destroy(go);
             }
             spawned.Clear();

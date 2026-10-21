@@ -57,8 +57,8 @@ namespace NotMyBlood.Clues
 
         public string GetInteractionPrompt()
         {
-            string basePrompt = recorded ? $"Bereits notiert: {Data.DisplayName}" : $"Untersuchen: {Data.DisplayName}";
-            return $"{basePrompt} (E drücken) | Koffer-Analyse (E halten)";
+            // Kurzer Text für den HUD-Hinweis; die Tasten zeigt das HUD selbst an
+            return recorded ? $"Bereits notiert: {Data.DisplayName}" : $"Untersuchen: {Data.DisplayName}";
         }
 
         public void Interact(GameObject interactor)

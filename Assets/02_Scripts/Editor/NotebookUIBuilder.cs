@@ -10,6 +10,7 @@ using UnityEngine.TextCore.LowLevel;
 using UnityEngine.UI;
 using NotMyBlood.Core;
 using NotMyBlood.UI;
+using NotMyBlood.Clues;
 
 namespace NotMyBlood.EditorTools
 {

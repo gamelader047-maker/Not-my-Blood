@@ -5,7 +5,7 @@ namespace NotMyBlood.Core
     public class AnalysisKit : MonoBehaviour, IInteractable
     {
         [Header("Kit Settings")]
-        [SerializeField] private string promptMessage = "Koffer aufheben (E)";
+        [SerializeField] private string promptMessage = "Analyse-Koffer aufheben";
         [SerializeField] private int remainingCharges = 1; // Startwert laut GDD V1.1 (1 bei 3-5 Spielern)
 
         private bool isCarried = false;
@@ -20,7 +20,9 @@ namespace NotMyBlood.Core
             {
                 return "Analyse-Koffer wird getragen";
             }
-            return $"{promptMessage} [Ladungen: {remainingCharges}]";
+            // Kurzer Text für den HUD-Hinweis; die Taste zeigt das HUD selbst an
+            string label = promptMessage.Replace("(E)", "").Trim();
+            return $"{label} ({remainingCharges} {(remainingCharges == 1 ? "Ladung" : "Ladungen")})";
         }
 
         public void Interact(GameObject interactor)

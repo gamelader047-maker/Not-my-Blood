@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 using NotMyBlood.Core;
+using NotMyBlood.Clues;
 
 namespace NotMyBlood.UI
 {

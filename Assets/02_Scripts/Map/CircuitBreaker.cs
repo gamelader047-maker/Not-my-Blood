@@ -23,7 +23,13 @@ namespace NotMyBlood.Map
         /// </summary>
         public void Interact(GameObject interactor)
         {
-            Debug.Log("Sicherungskasten bedient von: " + interactor.name);
+            if (PowerManager.Instance == null)
+            {
+                Debug.LogWarning("[CircuitBreaker] Kein PowerManager in der Szene gefunden!");
+                return;
+            }
+            // PowerManager prüft selbst: nur in der Ermittlung und nur 1x pro Runde
+            PowerManager.Instance.SabotagePower();
         }
     }
 }

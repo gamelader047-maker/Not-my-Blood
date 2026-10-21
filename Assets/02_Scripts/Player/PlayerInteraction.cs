@@ -37,6 +37,12 @@ namespace NotMyBlood.Player
         /// <summary>Beschriftung der laufenden Halte-Aktion, z. B. "Analysiere Spur".</summary>
         public string HoldLabel => IsHolding ? holdTarget.HoldActionLabel : string.Empty;
 
+        /// <summary>Objekt, auf das der Spieler gerade schaut (oder null) – für den Interaktions-Hinweis.</summary>
+        public IInteractable CurrentTarget { get; private set; }
+
+        /// <summary>True, wenn das aktuelle Ziel eine Halte-Aktion hat, die der Spieler gerade ausführen darf.</summary>
+        public bool CanHoldCurrentTarget { get; private set; }
+
         private const int MaxHits = 8;
         private readonly RaycastHit[] hits = new RaycastHit[MaxHits];
         private Camera playerCamera;
@@ -61,10 +67,14 @@ namespace NotMyBlood.Player
             if (playerCamera == null || keyboard == null || UIState.BlocksPlayerInput)
             {
                 CancelHold();
+                CurrentTarget = null;
+                CanHoldCurrentTarget = false;
                 return;
             }
 
             IInteractable target = FindTarget();
+            CurrentTarget = target;
+            CanHoldCurrentTarget = target is IHoldInteractable h && h.CanHoldInteract(gameObject);
             KeyControl interactKey = keyboard.eKey;
 
             if (holdTarget != null)
@@ -75,9 +85,9 @@ namespace NotMyBlood.Player
 
             if (target == null || !interactKey.wasPressedThisFrame) return;
 
-            if (target is IHoldInteractable holdable && holdable.CanHoldInteract(gameObject))
+            if (CanHoldCurrentTarget)
             {
-                BeginHold(holdable, target);
+                BeginHold((IHoldInteractable)target, target);
             }
             else
             {
