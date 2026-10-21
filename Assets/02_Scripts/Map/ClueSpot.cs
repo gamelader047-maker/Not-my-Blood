@@ -4,53 +4,60 @@ using NotMyBlood.Core;
 namespace NotMyBlood.Clues
 {
     /// <summary>
-    /// Repräsentiert einen festen Spurenpunkt in der Szene (vom Editor-Tool generiert).
+    /// Repräsentiert einen Spurenpunkt in der Spielwelt.
     /// </summary>
     public class ClueSpot : MonoBehaviour
     {
-        [Header("Spot Infos")]
         [SerializeField] private int spotId;
-        [SerializeField] private string roomName = "Wohnzimmer";
-        [SerializeField] private bool allowsFloorClues = true;
-        [SerializeField] private bool allowsWallClues = true;
-        [SerializeField] private bool extraFlag = false;
+        [SerializeField] private string roomName = "Raum";
+        [SerializeField] private bool allowBlood;
+        [SerializeField] private bool allowShoe;
+        [SerializeField] private bool allowFiber;
 
         public int SpotId => spotId;
         public string RoomName => roomName;
-        public bool AllowsFloorClues => allowsFloorClues;
-        public bool AllowsWallClues => allowsWallClues;
 
         /// <summary>
-        /// Prüft, ob an diesem Spurenpunkt bereits ein ClueObject liegt.
+        /// Prüft, ob die angegebene Spurkategorie an diesem Punkt erlaubt ist.
         /// </summary>
-        public bool IsOccupied => transform.childCount > 0;
+        public bool Allows(ClueCategory category)
+        {
+            switch (category)
+            {
+                case ClueCategory.Blut:
+                    return allowBlood;
+                case ClueCategory.Schuh:
+                    return allowShoe;
+                case ClueCategory.Faser:
+                    return allowFiber;
+                default:
+                    return false;
+            }
+        }
 
+#if UNITY_EDITOR
         /// <summary>
-        /// Wird vom TestHouseBuilder aufgerufen (4 Argumente).
+        /// Richtet den Spurenpunkt im Editor ein.
         /// </summary>
-        public void EditorSetup(int id, string room, bool floorAllowed, bool wallAllowed)
+        public void EditorSetup(int id, string room, bool blood, bool shoe, bool fiber)
         {
             spotId = id;
             roomName = room;
-            allowsFloorClues = floorAllowed;
-            allowsWallClues = wallAllowed;
+            allowBlood = blood;
+            allowShoe = shoe;
+            allowFiber = fiber;
+            UnityEditor.EditorUtility.SetDirty(this);
         }
 
-        /// <summary>
-        /// Wird vom TestHouseBuilder aufgerufen (5 Argumente: int, string, bool, bool, bool).
-        /// </summary>
-        public void EditorSetup(int id, string room, bool floorAllowed, bool wallAllowed, bool flag5)
+        private void OnDrawGizmos()
         {
-            EditorSetup(id, room, floorAllowed, wallAllowed);
-            extraFlag = flag5;
-        }
+            // Rote Kugel wenn Schuh (Boden) erlaubt, sonst blaue Kugel
+            Gizmos.color = allowShoe ? Color.red : Color.blue;
+            Gizmos.DrawSphere(transform.position, 0.3f);
 
-        /// <summary>
-        /// Überladung für ClueCategory (falls an anderer Stelle genutzt).
-        /// </summary>
-        public void EditorSetup(int id, string room, bool floorAllowed, bool wallAllowed, ClueCategory category)
-        {
-            EditorSetup(id, room, floorAllowed, wallAllowed);
+            // Beschriftung im Szene-Fenster
+            UnityEditor.Handles.Label(transform.position + Vector3.up * 0.5f, $"S{spotId:00} {roomName}");
         }
+#endif
     }
 }

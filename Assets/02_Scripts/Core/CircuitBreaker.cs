@@ -1,32 +1,29 @@
 using UnityEngine;
-using NotMyBlood.Clues; // Nutzt unser IInteractable
 using NotMyBlood.Core;
 
-namespace NotMyBlood.Environment
+namespace NotMyBlood.Map
 {
+    /// <summary>
+    /// Steuert den Sicherungskasten für Sabotage und Stromausfälle.
+    /// </summary>
     public class CircuitBreaker : MonoBehaviour, IInteractable
     {
-        [SerializeField] private string promptMessage = "Stromkasten manipulieren (E)";
-        private bool hasBeenUsed = false;
+        [SerializeField] private string interactionPrompt = "Sicherungskasten bedienen";
 
+        /// <summary>
+        /// Gibt den Interaktionsprompt zurück.
+        /// </summary>
         public string GetInteractionPrompt()
         {
-            return hasBeenUsed ? "Sicherungskasten (Bereits manipuliert)" : promptMessage;
+            return interactionPrompt;
         }
 
+        /// <summary>
+        /// Führt die Interaktion am Sicherungskasten aus.
+        /// </summary>
         public void Interact(GameObject interactor)
         {
-            if (hasBeenUsed) return;
-
-            if (PowerManager.Instance != null)
-            {
-                PowerManager.Instance.SabotagePower();
-                hasBeenUsed = true;
-            }
-            else
-            {
-                Debug.LogWarning("[CircuitBreaker] Kein PowerManager in der Szene gefunden!");
-            }
+            Debug.Log("Sicherungskasten bedient von: " + interactor.name);
         }
     }
 }
